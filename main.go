@@ -60,6 +60,11 @@ func main() {
 		Score:  9,
 	}
 	album3 := Album{
+		Title:  "Goo",
+		Artist: "Sonic Youth",
+		Score:  8,
+	}
+	album4 := Album{
 		Title:  "Daydream Nation",
 		Artist: "Sonic Youth",
 		Score:  10,
@@ -67,12 +72,24 @@ func main() {
 	insert_data(db, album1)
 	insert_data(db, album2)
 	insert_data(db, album3)
+	insert_data(db, album4)
 
 	album_ret, err := album_by_title(db, "Grace")
 	if err != nil {
 		log.Println(err)
+	} else {
+		log.Printf("Album titled 'Grace': %v", album_ret)
 	}
-	log.Printf("Album titled 'Grace': %v", album_ret)
+
+	albums_ret, err := albums_by_artist(db, "Sonic Youth")
+	if err != nil {
+		log.Println(err)
+	} else {
+		for _, album := range albums_ret {
+			log.Printf("Album by 'Sonic Youth': %v", album)
+		}
+	}
+
 }
 
 func conn_url(user, passwd, host string, port int, db string) string {
@@ -137,4 +154,29 @@ func album_by_title(db *sql.DB, title string) (Album, error) {
 		return alb, fmt.Errorf("album_by_title %s: %v", title, err)
 	}
 	return alb, nil
+}
+
+func albums_by_artist(db *sql.DB, name string) ([]Album, error) {
+	var albums []Album
+
+	// Returns a query lazy iterator
+	rows, err := db.Query("SELECT * FROM albums WHERE artist = $1", name)
+	if err != nil {
+		return nil, fmt.Errorf("album_by_artist %q: %v", name, err)
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var alb Album
+		if err := rows.Scan(&alb.ID, &alb.Title, &alb.Artist, &alb.Score); err != nil {
+			return nil, fmt.Errorf("albums_by_artist %q: %v", name, err)
+		}
+		albums = append(albums, alb)
+	}
+
+	// Returns non-nil if any error was found in the iterating process
+	if err := rows.Err(); err != nil {
+		return albums, fmt.Errorf("albums_by_artist %q: %v", name, err)
+	}
+	return albums, nil
 }
