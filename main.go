@@ -13,7 +13,7 @@ import (
 )
 
 type Album struct {
-	ID     int64
+	ID     *int64
 	Title  string
 	Artist string
 	Score  int64
@@ -48,6 +48,25 @@ func main() {
 
 	wait_for_db(db)
 	create_table(db)
+
+	album1 := Album{
+		Title:  "Grace",
+		Artist: "Jeff Buckley",
+		Score:  9,
+	}
+	album2 := Album{
+		Title:  "Requiem in D minor, K. 626",
+		Artist: "Wolfgang Amadeus Mozart",
+		Score:  9,
+	}
+	album3 := Album{
+		Title:  "Daydream Nation",
+		Artist: "Sonic Youth",
+		Score:  10,
+	}
+	insert_data(db, album1)
+	insert_data(db, album2)
+	insert_data(db, album3)
 }
 
 func conn_url(user, passwd, host string, port int, db string) string {
@@ -71,15 +90,28 @@ func create_table(db *sql.DB) {
 	// sql.Exec() executes a deliberate SQL query
 	_, err := db.Exec(`
 		CREATE TABLE IF NOT EXISTS albums (
-			id BIGSERIAL PRIMARY KEY,
+			id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
 			title TEXT NOT NULL,
 			artist TEXT NOT NULL,
 			score REAL NOT NULL CHECK (score >= 0 AND score <= 10)
 		)
 	`)
 	if err != nil {
-		log.Fatal(err)
+		log.Println(err)
 	}
 
 	log.Println("Table albums created successfully")
+}
+
+func insert_data(db *sql.DB, album Album) error {
+	_, err := db.Exec(`
+		INSERT INTO albums (title, artist, score) VALUES ($1, $2, $3)
+	`, album.Title, album.Artist, album.Score)
+
+	if err != nil {
+		return fmt.Errorf("insert_data: %v", err)
+	}
+
+	log.Printf("Inserted into albums: %v\n", album)
+	return nil
 }
