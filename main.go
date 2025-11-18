@@ -127,6 +127,8 @@ func create_table(db *sql.DB) {
 }
 
 func insert_data(db *sql.DB, album Album) error {
+	// Very bad use because you keep preparing it every time, but
+	// this is just a demo
 	prep_q, err := db.Prepare(`
 		INSERT INTO albums (title, artist, score) VALUES ($1, $2, $3)
 	`)
