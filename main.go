@@ -127,10 +127,14 @@ func create_table(db *sql.DB) {
 }
 
 func insert_data(db *sql.DB, album Album) error {
-	_, err := db.Exec(`
+	prep_q, err := db.Prepare(`
 		INSERT INTO albums (title, artist, score) VALUES ($1, $2, $3)
-	`, album.Title, album.Artist, album.Score)
+	`)
+	if err != nil {
+		return fmt.Errorf("insert_data: %v", err)
+	}
 
+	_, err = prep_q.Exec(album.Title, album.Artist, album.Score)
 	if err != nil {
 		return fmt.Errorf("insert_data: %v", err)
 	}
