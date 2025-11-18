@@ -12,6 +12,13 @@ import (
 	"github.com/joho/godotenv"
 )
 
+type Album struct {
+	ID     int64
+	Title  string
+	Artist string
+	Score  int64
+}
+
 func main() {
 	// Load env vars from .env file
 	err := godotenv.Load(".env")
@@ -40,6 +47,7 @@ func main() {
 	defer db.Close()
 
 	wait_for_db(db)
+	create_table(db)
 }
 
 func conn_url(user, passwd, host string, port int, db string) string {
@@ -57,4 +65,21 @@ func wait_for_db(db *sql.DB) {
 		log.Println("Waiting for database, retrying in 1s...")
 		time.Sleep(time.Second)
 	}
+}
+
+func create_table(db *sql.DB) {
+	// sql.Exec() executes a deliberate SQL query
+	_, err := db.Exec(`
+		CREATE TABLE IF NOT EXISTS albums (
+			id BIGSERIAL PRIMARY KEY,
+			title TEXT NOT NULL,
+			artist TEXT NOT NULL,
+			score REAL NOT NULL CHECK (score >= 0 AND score <= 10)
+		)
+	`)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	log.Println("Table albums created successfully")
 }
