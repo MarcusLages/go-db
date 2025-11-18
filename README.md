@@ -114,19 +114,20 @@ if err != nil {
 	log.Fatal(err)
 }
 ```
-### Adding data, also with `Exec()`
+### Adding data with `Exec()` and `Prepare()`
 - Very similar to before, but this time we will use `Prepare()` to check for early schema errors
 ```go
-_, err := db.Exec(`
-	INSERT INTO albums (title, artist, score) VALUES ($1, $2, $3)
-`, album.Title, album.Artist, album.Score)
-
-if err != nil {
-	return fmt.Errorf("insert_data: %v", err)
-}
-
-log.Printf("Inserted into albums: %v\n", album)
-return nil
+prep_q, err := db.Prepare(`
+        INSERT INTO albums (title, artist, score) VALUES ($1, $2, $3)
+    `)
+    if err != nil {
+        return fmt.Errorf("insert_data: %v", err)
+    }
+  
+    _, err = prep_q.Exec(album.Title, album.Artist, album.Score)
+    if err != nil {
+        return fmt.Errorf("insert_data: %v", err)
+    }
 ```
 ### Querying One Row
 - For one row, we use a combination of `QueryRow()` to prepare the query for execution and `Scan()` for running it and getting the first value
