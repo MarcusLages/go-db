@@ -67,6 +67,12 @@ func main() {
 	insert_data(db, album1)
 	insert_data(db, album2)
 	insert_data(db, album3)
+
+	album_ret, err := album_by_title(db, "Grace")
+	if err != nil {
+		log.Println(err)
+	}
+	log.Printf("Album titled 'Grace': %v", album_ret)
 }
 
 func conn_url(user, passwd, host string, port int, db string) string {
@@ -114,4 +120,21 @@ func insert_data(db *sql.DB, album Album) error {
 
 	log.Printf("Inserted into albums: %v\n", album)
 	return nil
+}
+
+func album_by_title(db *sql.DB, title string) (Album, error) {
+	var alb Album
+
+	// Prepares the select query
+	row := db.QueryRow("SELECT * FROM albums WHERE title = $1", title)
+
+	// Runs the query and reads only the first row with row.Scan
+	if err := row.Scan(&alb.ID, &alb.Title, &alb.Artist, &alb.Score); err != nil {
+		// Returns sql.ErrNoRows error if not found
+		if err == sql.ErrNoRows {
+			return alb, fmt.Errorf("no albums with title %s", title)
+		}
+		return alb, fmt.Errorf("album_by_title %s: %v", title, err)
+	}
+	return alb, nil
 }
